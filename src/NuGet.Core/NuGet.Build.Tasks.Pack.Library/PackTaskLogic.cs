@@ -29,6 +29,8 @@ namespace NuGet.Build.Tasks.Pack
                 Suffix = request.VersionSuffix,
                 Tool = request.IsTool,
                 Symbols = request.IncludeSymbols,
+                Version = request.PackageVersion,
+                BasePath = request.NuspecBasePath,
                 NoPackageAnalysis = request.NoPackageAnalysis,
                 PackTargetArgs = new MSBuildPackTargetArgs
                 {
@@ -53,6 +55,11 @@ namespace NuGet.Build.Tasks.Pack
                 }
 
                 packArgs.MinClientVersion = version;
+            }
+
+            if (request.NuspecProperties != null && request.NuspecProperties.Any())
+            {
+                packArgs.Properties.AddRange(ParsePropertiesAsDictionary(request.NuspecProperties));
             }
 
             InitCurrentDirectoryAndFileName(request, packArgs);
@@ -574,6 +581,23 @@ namespace NuGet.Build.Tasks.Pack
                     PackCommandRunner.AddLibraryDependency(packageDependency, dependencies);
                 }
             }
+        }
+
+        private static IDictionary<string, string> ParsePropertiesAsDictionary(string[] properties)
+        {
+            var dictionary = new Dictionary<string, string>();
+            foreach (var item in properties)
+            {
+                string[] pair = item.Split('=');
+                if (pair.Length != 2)
+                {
+                    continue;
+                }
+                
+                dictionary[pair[0]] = pair[1];
+            }
+
+            return dictionary;
         }
     }
 }

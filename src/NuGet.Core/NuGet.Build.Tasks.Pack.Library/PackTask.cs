@@ -1,8 +1,11 @@
 ﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
+using System.Diagnostics;
 using Microsoft.Build.Framework;
 using NuGet.Commands;
+using NuGet.Packaging;
 using ILogger = NuGet.Common.ILogger;
 
 namespace NuGet.Build.Tasks.Pack
@@ -49,6 +52,8 @@ namespace NuGet.Build.Tasks.Pack
         public bool IncludeBuildOutput { get; set; }
         public string BuildOutputFolder { get; set; }
         public string[] ContentTargetFolders { get; set; }
+        public string[] NuspecProperties { get; set; }
+        public string NuspecBasePath { get; set; }
 
         public ILogger Logger => new MSBuildLogger(Log);
 
@@ -79,9 +84,12 @@ namespace NuGet.Build.Tasks.Pack
         {
             var request = GetRequest();
             var logic = PackTaskLogic;
-
+            PackageBuilder packageBuilder = null;
             var packArgs = logic.GetPackArgs(request);
-            var packageBuilder = logic.GetPackageBuilder(request);
+            if (string.IsNullOrEmpty(request.NuspecFile))
+            {
+                packageBuilder = logic.GetPackageBuilder(request);
+            }
             var packRunner = logic.GetPackCommandRunner(request, packArgs, packageBuilder);
             logic.BuildPackage(packRunner);
 
@@ -114,8 +122,10 @@ namespace NuGet.Build.Tasks.Pack
                 Logger = Logger,
                 MinClientVersion = MSBuildStringUtility.TrimAndGetNullForEmpty(MinClientVersion),
                 NoPackageAnalysis = NoPackageAnalysis,
+                NuspecBasePath = MSBuildStringUtility.TrimAndGetNullForEmpty(NuspecBasePath),
                 NuspecFile = MSBuildStringUtility.TrimAndGetNullForEmpty(NuspecFile),
                 NuspecOutputPath = MSBuildStringUtility.TrimAndGetNullForEmpty(NuspecOutputPath),
+                NuspecProperties = MSBuildStringUtility.TrimAndExcludeNullOrEmpty(NuspecProperties),
                 PackageFiles = MSBuildUtility.WrapMSBuildItem(PackageFiles),
                 PackageFilesToExclude = MSBuildUtility.WrapMSBuildItem(PackageFilesToExclude),
                 PackageId = MSBuildStringUtility.TrimAndGetNullForEmpty(PackageId),
