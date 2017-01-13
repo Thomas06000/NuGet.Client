@@ -31,11 +31,18 @@ namespace NuGet.PackageManagement.UI
 
         public async override Task SetCurrentPackage(
             PackageItemListViewModel searchResultPackage,
-            ItemFilter filter)
+            ItemFilter filter,
+            InfiniteScrollList packageList)
         {
 
-            await base.SetCurrentPackage(searchResultPackage, filter);
+            await base.SetCurrentPackage(searchResultPackage, filter, packageList);
 
+            // SetCurrentPackage can take long time to return, user might changed selected package.
+            // Check selected package.
+            if (packageList.SelectedItem != searchResultPackage)
+            {
+                return;
+            }
             InstalledVersion = searchResultPackage.InstalledVersion;
             SelectedVersion.IsCurrentInstalled = InstalledVersion == SelectedVersion.Version;
             OnPropertyChanged(nameof(SelectedVersion));

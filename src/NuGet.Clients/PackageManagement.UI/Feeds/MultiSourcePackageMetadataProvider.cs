@@ -204,8 +204,21 @@ namespace NuGet.PackageManagement.UI
                 .Select(task => task.ContinueWith(LogError, TaskContinuationOptions.OnlyOnFaulted))
                 .ToArray();
 
-            var completed = (await Task.WhenAll(tasks))
-                .Where(m => m != null);
+            IEnumerable<IPackageSearchMetadata> completed = null;
+            try
+            {
+                completed = (await Task.WhenAll(tasks))
+                    .Where(m => m != null);
+            }
+            catch
+            {
+                completed = tasks.Where(m => m != null && !m.IsFaulted && m.Result != null).Select(m => m.Result);
+            }
+
+            if (completed.Count() == 0)
+            {
+                return new List<VersionInfo>();
+            }
 
             return await MergeVersionsAsync(identity, completed);
         }
